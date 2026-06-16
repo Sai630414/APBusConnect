@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APSRTC Journey Planner</title>
+    <!-- Outfit Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.js CSS for Map visualization -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-card">
+            <div class="loading-logo">
+                <svg viewBox="0 0 24 24" width="48" height="48">
+                    <path fill="currentColor" d="M18 11H6V6h12v5zm-1.5 6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM9 17.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h1v2h2v-2h10v2h2v-2h1c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 14V6h16v8H4z"/>
+                </svg>
+            </div>
+            <h2>Loading APSRTC GTFS Data</h2>
+            <p>Parsing transit schedules, stops, and shapes...</p>
+            
+            <div class="progress-bar-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div id="progressPercent" class="progress-percent">0%</div>
+
+            <div class="loading-steps">
+                <div id="step-stops" class="step-item waiting">
+                    <span class="step-icon">○</span> Loading stops.txt
+                </div>
+                <div id="step-routes" class="step-item waiting">
+                    <span class="step-icon">○</span> Loading routes.txt
+                </div>
+                <div id="step-trips" class="step-item waiting">
+                    <span class="step-icon">○</span> Loading trips.txt
+                </div>
+                <div id="step-shapes" class="step-item waiting">
+                    <span class="step-icon">○</span> Loading shapes.txt
+                </div>
+                <div id="step-stop_times" class="step-item waiting">
+                    <span class="step-icon">○</span> Loading stop_times.txt
+                </div>
+                <div id="step-indexing" class="step-item waiting">
+                    <span class="step-icon">○</span> Building in-memory indexes
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="brand">
+                    <span class="brand-logo">
+                        <svg viewBox="0 0 24 24" width="28" height="28">
+                            <path fill="currentColor" d="M18 11H6V6h12v5zm-1.5 6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM9 17.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h1v2h2v-2h10v2h2v-2h1c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 14V6h16v8H4z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <h1>APSRTC</h1>
+                        <p class="subtitle">Journey Planner & Route Finder</p>
+                    </div>
+                </div>
+                <div class="system-status">
+                    <span class="status-indicator"></span>
+                    <span id="dataStatusText">System Offline</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <main class="app-main">
+            <div class="layout-grid">
+                
+                <!-- Left Panel: Search and Results -->
+                <div class="left-panel">
+                    
+                    <!-- Search Card -->
+                    <div class="card search-card">
+                        <div class="card-header">
+                            <h2 class="card-title">Search Route</h2>
+                            <p class="card-subtitle">Find direct buses or connected journeys</p>
+                        </div>
+                        
+                        <div class="search-form">
+                            <!-- Source Stop Autocomplete -->
+                            <div class="form-group">
+                                <label for="sourceInput">Source Stop</label>
+                                <div class="autocomplete-wrapper">
+                                    <span class="input-icon">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <circle cx="12" cy="12" r="3" fill="currentColor"></circle>
+                                        </svg>
+                                    </span>
+                                    <input type="text" id="sourceInput" placeholder="Enter starting stop (e.g. Kadapa)" autocomplete="off">
+                                    <button type="button" class="clear-btn" id="clearSource">&times;</button>
+                                    <div id="sourceSuggestions" class="suggestions-list hidden"></div>
+                                </div>
+                            </div>
+
+                            <!-- Swap Button -->
+                            <div class="swap-divider">
+                                <button type="button" id="swapStopsBtn" class="swap-btn" title="Swap stops">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12M17 20l4-4M17 20l-4-4"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Destination Stop Autocomplete -->
+                            <div class="form-group">
+                                <label for="destInput">Destination Stop</label>
+                                <div class="autocomplete-wrapper">
+                                    <span class="input-icon text-danger">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                        </svg>
+                                    </span>
+                                    <input type="text" id="destInput" placeholder="Enter destination stop (e.g. Nellore)" autocomplete="off">
+                                    <button type="button" class="clear-btn" id="clearDest">&times;</button>
+                                    <div id="destSuggestions" class="suggestions-list hidden"></div>
+                                </div>
+                            </div>
+
+                            <!-- Timing and Action -->
+                            <div class="timing-actions">
+                                <div class="form-group flex-1">
+                                    <label for="depTimeInput">Departure Time</label>
+                                    <div class="time-input-wrapper">
+                                        <input type="time" id="depTimeInput">
+                                        <label class="checkbox-container">
+                                            <input type="checkbox" id="anyTimeCheckbox" checked>
+                                            <span class="checkmark"></span>
+                                            Any Time
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="button" id="searchBtn" class="btn btn-primary search-btn">
+                                    <span>Find Journeys</span>
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div class="results-header hidden" id="resultsHeader">
+                        <h3>Available Journeys</h3>
+                        <span id="resultsCount">0 found</span>
+                    </div>
+
+                    <div id="resultsList" class="results-list">
+                        <!-- Welcome message/instruction -->
+                        <div class="welcome-card card">
+                            <div class="welcome-icon">
+                                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                                </svg>
+                            </div>
+                            <h3>Ready to Plan Your Trip</h3>
+                            <p>Select your starting station and destination to view available direct or connecting buses across the Andhra Pradesh state network.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Map Container -->
+                <div class="right-panel">
+                    <div class="card map-card">
+                        <div class="card-header map-header">
+                            <h2 class="card-title">Interactive Journey Map</h2>
+                            <div class="map-controls">
+                                <select id="mapStyleSelect" class="map-style-select">
+                                    <option value="google-road">Google Maps (Road)</option>
+                                    <option value="google-satellite">Google Maps (Satellite)</option>
+                                    <option value="google-terrain">Google Maps (Terrain)</option>
+                                    <option value="osm">OpenStreetMap</option>
+                                </select>
+                                <button type="button" id="resetMapBtn" class="btn btn-secondary btn-sm" title="Reset view">
+                                    Reset View
+                                </button>
+                            </div>
+                        </div>
+                        <div class="map-body">
+                            <div id="map"></div>
+                            <div id="mapOfflineFallback" class="map-fallback hidden">
+                                <p>Map offline or failed to load. The journey planner is still fully functional!</p>
+                            </div>
+                        </div>
+                        <div class="map-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot start"></span>
+                                <span>Source Stop</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot transfer"></span>
+                                <span>Transfer Point</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot end"></span>
+                                <span>Destination Stop</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-line direct"></span>
+                                <span>Direct Bus Route</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-line bus1-line"></span>
+                                <span>Bus 1 Route (Connecting)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-line bus2-line"></span>
+                                <span>Bus 2 Route (Connecting)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet.js script -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+            
+    <!-- Main Application script -->
+    <script src="app.js"></script>
+</body>
+</html>
