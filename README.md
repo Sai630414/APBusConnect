@@ -1,4 +1,4 @@
-# APSRTC Journey Planner
+# APBusConnect
 
 A browser-based transit planner built using APSRTC GTFS data.
 
