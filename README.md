@@ -1,71 +1,104 @@
-# APBusConnect
+# 🚍 APBusConnect
 
-A browser-based transit planner built using APSRTC GTFS data.
+APBusConnect is a journey planning application built using APSRTC GTFS transit data that helps passengers discover both **direct** and **connecting bus routes** across Andhra Pradesh.
 
-## Features
+Unlike traditional route search systems that only display direct buses, APBusConnect identifies transfer points and recommends the most suitable connecting journeys when direct services are unavailable.
 
-- Direct Bus Route Search
-- Smart Transfer Detection
-- Fastest Connecting Route Selection
-- Departure & Arrival Time Calculation
-- Journey Duration Estimation
-- Interactive Route Mapping using Leaflet
-- GTFS Shapes Visualization
+## 🌐 Live Demo
 
-## How It Works
+https://apbusconnect.xyz
 
-The application loads GTFS files:
+## 📂 GitHub Repository
 
-- stops.txt
-- stop_times.txt
-- trips.txt
-- routes.txt
-- shapes.txt
+https://github.com/Sai630414/APBusConnect
 
-and builds optimized in-memory indexes for fast route discovery.
+## ✨ Features
 
-### Direct Route Search
+* Search direct bus routes between two stops
+* Find connecting bus routes when direct buses are unavailable
+* Intelligent transfer point detection
+* Journey recommendations with minimum transfers
+* GTFS-based route planning
+* Fast client-side search
+* Works with APSRTC transit data
 
-Finds trips where:
+## 🚌 Example
 
-```text
-Source Stop → Destination Stop
-```
+### Search
 
-exist within the same trip.
+Kadapa → Pamur
 
-### Connecting Route Search
+### Result
 
-If no direct route exists:
+1. Kadapa → Badvel
+2. Change Bus at Badvel
+3. Badvel → Pamur
 
-1. Finds all reachable stops from source.
-2. Finds all stops that can reach destination.
-3. Finds common transfer points.
-4. Calculates waiting time and total journey time.
-5. Recommends the fastest route.
+Transfers: 1
 
-## Algorithm
+This allows passengers to discover journeys that would otherwise appear unavailable.
 
-The planner uses:
+## 📊 Data Source
 
-- GTFS Indexing
-- Transfer Stop Intersection Search
-- Greedy Fastest Route Selection
+This project uses publicly available GTFS (General Transit Feed Specification) transit data.
 
-This approach provides fast route planning without requiring a backend database.
+GTFS files used:
 
-## Tech Stack
+* stops.txt
+* trips.txt
+* stop_times.txt
 
-- HTML
-- CSS
-- JavaScript
-- Leaflet Maps
-- GTFS Transit Data
+## 🛠️ Technologies Used
 
-## Future Improvements
+* HTML
+* CSS
+* JavaScript
+* GTFS Transit Data
+* Vercel
+* Google Search Console
 
-- Multi-transfer routing
-- Dijkstra-based shortest path search
-- Real-time APSRTC vehicle tracking
-- PostgreSQL/PostGIS backend
-- Mobile application support
+## 🔍 How It Works
+
+1. Load GTFS transit files
+2. Build stop-to-trip mappings
+3. Search for direct routes
+4. If no direct route exists:
+
+   * Find all reachable stops from source
+   * Find all reachable stops from destination
+   * Detect common transfer points
+   * Recommend the best connecting journey
+
+## 🚀 Future Enhancements
+
+* Multi-transfer journey planning
+* Real-time APSRTC vehicle tracking integration
+* Journey duration optimization
+* Interactive route maps
+* Ticket booking integration
+* Mobile application
+* Route popularity analytics
+
+## 💡 Motivation
+
+Many passengers struggle to discover bus journeys when direct services are unavailable.
+
+For example, travel platforms may display "No Buses Available" even though a journey can be completed using connecting buses.
+
+APBusConnect aims to bridge this gap by helping passengers discover practical transfer-based routes.
+
+## 👨‍💻 Author
+
+Sai Kondareddy
+
+Integrated M.Tech, Computer Science and Engineering
+
+VIT-AP University
+
+Email: [saikondareddypala@gmail.com](mailto:saikondareddypala@gmail.com)
+
+LinkedIn: https://www.linkedin.com/in/saikondareddy
+
+## 📜 License
+
+This project is licensed under the MIT License.
